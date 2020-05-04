@@ -176,7 +176,7 @@ class Neyro(Rocket):
         self.coofOut = np.ones((self.neyroSkrut, self.neyroVuh))
 
         for i in range(self.neyroVhod):
-            for j in range(self.neyroSkrut):
+            for j in range(self.neyroSkrut): 
                 self.coofIn[i][j] = (random.random()-0.5)*2
 
         for i in range(self.neyroSkrut):
