@@ -151,8 +151,8 @@ class Pygame():
 
 class Rocket():
     def __init__(self):
-        self.X=1920/2+random.randint(-81,81)
-        self.Y=800/2+random.randint(-40,40)
+        self.X=1920/2#+random.randint(-41,41)
+        self.Y=800/2#+random.randint(-20,20)
         self.rotate=0
         self.flame=0.0
         self.speedX=0
@@ -175,10 +175,11 @@ class Rocket():
 
 
 class Neyro(Rocket):
-    def __init__(self, neyroVhod, neyroSkrut, neyroVuh):
+    def __init__(self, neyroVhod, neyroSkrut,neyroSkrut2, neyroVuh):
         super().__init__()
         self.neyroVhod = neyroVhod + 1
         self.neyroSkrut = neyroSkrut
+        self.neyroSkrut2 = neyroSkrut2
         self.neyroVuh = neyroVuh
         self.time=0
         self.down= np.array([1.0 for i in range(4)])
@@ -186,18 +187,24 @@ class Neyro(Rocket):
         self.otklon=0
         self.Vhodmass = np.array([1.0 for i in range(self.neyroVhod)])
         self.Skrutmass = np.array([1.0 for i in range(self.neyroSkrut)])
+        self.Skrutmass2 = np.array([1.0 for i in range(self.neyroSkrut2)])
         self.Vuhmass = np.array([1.0 for i in range(self.neyroVuh)]) 
         
         #self.wi = makeMatrix(self.ni, self.nh)
         #self.wo = makeMatrix(self.nh, self.no)
         self.coofIn = np.ones((self.neyroVhod, self.neyroSkrut))
-        self.coofOut = np.ones((self.neyroSkrut, self.neyroVuh))
+        self.coofCentr = np.ones((self.neyroSkrut, self.neyroSkrut2))
+        self.coofOut = np.ones((self.neyroSkrut2, self.neyroVuh))
 
         for i in range(self.neyroVhod):
             for j in range(self.neyroSkrut): 
                 self.coofIn[i][j] = (random.random()-0.5)*2
 
         for i in range(self.neyroSkrut):
+            for j in range(self.neyroSkrut2):
+                self.coofCentr[i][j] = (random.random()-0.5)*2 
+
+        for i in range(self.neyroSkrut2):
             for j in range(self.neyroVuh):
                 self.coofOut[i][j] = (random.random()-0.5)*2 
 
@@ -215,12 +222,18 @@ class Neyro(Rocket):
             for i in range(self.neyroVhod):
                 sum = sum + self.Vhodmass[i] * self.coofIn[i][j]
             self.Skrutmass[j] = self.sigmoid(sum)
+
         #print(self.Skrutmass)
+        for j in range(self.neyroSkrut2):
+            sum = 0.0
+            for i in range(self.neyroSkrut):
+                sum = sum + self.Skrutmass[i] * self.coofCentr[i][j]
+            self.Skrutmass2[j] = self.sigmoid(sum)
 
         for k in range(self.neyroVuh):
             sum = 0.0
-            for j in range(self.neyroSkrut):
-                sum = sum + self.Skrutmass[j] * self.coofOut[j][k]
+            for j in range(self.neyroSkrut2):
+                sum = sum + self.Skrutmass2[j] * self.coofOut[j][k]
             self.Vuhmass[k] = self.sigmoid(sum)
         
         for i in range(4):
@@ -255,12 +268,13 @@ class Generic():
         self.pyg=pyg
         self.pocolenie=0
         self.vhod=9
-        self.skrut=28
+        self.skrut=16
+        self.skrut2=8
         self.selo=0
         self.top=0
         self.vuh=4
         self.personQuantity=quantity
-        self.persons = np.array([Neyro(self.vhod, self.skrut,  self.vuh) for i in range(self.personQuantity)]) 
+        self.persons = np.array([Neyro(self.vhod, self.skrut, self.skrut2,  self.vuh) for i in range(self.personQuantity)]) 
 
 
     def check(self):
@@ -271,7 +285,7 @@ class Generic():
                     if(self.pocolenie%1==0 ):
                       self.pyg.Drawline(800)
                       self.pyg.DrawRocket(self.persons[i].X,self.persons[i].Y,self.persons[i].rotate,self.persons[i].flame,(0,0,0))
-                      self.persons[i].update([(self.persons[i].X)/1920,(1920-self.persons[i].X)/1920,(self.persons[i].Y/800),(800-self.persons[i].Y)/800,(self.persons[i].speedX)/1920,(self.persons[i].speedY)/800,(self.persons[i].rotate%360)/360,(self.persons[i].flame)/20,(random.random()-0.5)*2,(self.persons[i].fuel)/3000])
+                      self.persons[i].update([(self.persons[i].X)/1920,(1920-self.persons[i].X)/1920,(self.persons[i].Y/800),(800-self.persons[i].Y)/800,(self.persons[i].speedX)/1920,(self.persons[i].speedY)/800,((self.persons[i].rotate%360)-180)/360,(self.persons[i].flame)/20,(random.random()-0.5)*2,(self.persons[i].fuel)/3000])
                     self.persons[i].Fizics(self.persons[i].down[0],self.persons[i].down[1],self.persons[i].down[2],self.persons[i].down[3])
                     if(self.pocolenie%1==0):
                       self.pyg.DrawRocket(self.persons[i].X,self.persons[i].Y,self.persons[i].rotate,self.persons[i].flame)
@@ -283,18 +297,18 @@ class Generic():
                         #self.persons[i].otklon=abs(self.persons[i].X-(1920/2))+abs(self.persons[i].Y-800)
                         #if( self.persons[i].otklon<200):
                         #    self.persons[i].time+=1
-                        self.persons[i].time+=1
-                        if(abs(self.persons[i].speedX<2)):
+                        #self.persons[i].time+=1
+                        if(abs(self.persons[i].speedX<1)):
                             self.persons[i].time+=1
                         if(abs(self.persons[i].speedY<1)):
                             self.persons[i].time+=1                        
-                        if(abs(self.persons[i].Y-800<100)):
+                        if(abs(self.persons[i].Y-800)<250):
                             self.persons[i].time+=1
                     if(800-self.persons[i].Y<15 and self.persons[i].speedY<1.5 and abs(self.persons[i].rotate%360)<30):
                         self.persons[i].dead=1
                         self.selo+=1
                         deads+=1
-                        self.persons[i].time*=2
+                        self.persons[i].time=abs(self.persons[i].time)*20
                     if(self.persons[i].Y>800):
                         deads+=1
                         self.persons[i].dead=1
@@ -305,7 +319,7 @@ class Generic():
             self.pyg.DrawRocket(self.persons[i].X,self.persons[i].Y,self.persons[i].rotate,self.persons[i].flame,(0,0,0))
                                 
     def sort(self):
-        person_tmp=Neyro(self.vhod, self.skrut,  self.vuh)
+        person_tmp=Neyro(self.vhod, self.skrut,  self.skrut2, self.vuh)
 
         for i in range(self.personQuantity):
             for j in range(self.personQuantity-i-1):
@@ -316,12 +330,16 @@ class Generic():
         self.top = self.persons[self.personQuantity-1].time
 
     def crossing(self,person1,person2):
-        tmp_person=Neyro(self.vhod, self.skrut,  self.vuh)
+        tmp_person=Neyro(self.vhod, self.skrut, self.skrut2, self.vuh)
         for i in range(person1.neyroVhod):
             for j in range(person1.neyroSkrut):
                 tmp_person.coofIn[i,j]=(person1.coofIn[i,j]+person2.coofIn[i,j])/2
 
         for i in range(person1.neyroSkrut):
+            for j in range(person1.neyroSkrut2):
+                tmp_person.coofCentr[i,j]=(person1.coofCentr[i,j]+person2.coofCentr[i,j])/2
+
+        for i in range(person1.neyroSkrut2):
             for j in range(person1.neyroVuh):
                 tmp_person.coofOut[i,j]=(person1.coofOut[i,j]+person2.coofOut[i,j])/2
 
@@ -331,12 +349,17 @@ class Generic():
 
         for i in range(person_mutant.neyroVhod):
             for j in range(person_mutant.neyroSkrut):
-                if(random.randint(0,100)<=30):
+                if(random.randint(0,100)<=10):
                     person_mutant.coofIn[i,j]+=(random.random()-0.5)*2
 
         for i in range(person_mutant.neyroSkrut):
+            for j in range(person_mutant.neyroSkrut2):
+                if(random.randint(0,100)<=10):
+                    person_mutant.coofCentr[i,j]+=(random.random()-0.5)*2
+
+        for i in range(person_mutant.neyroSkrut2):
             for j in range(person_mutant.neyroVuh):
-                if(random.randint(0,100)<=30):
+                if(random.randint(0,100)<=10):
                     person_mutant.coofOut[i,j]+=(random.random()-0.5)*2
 
         
@@ -345,7 +368,7 @@ class Generic():
     def evolution(self):
         #self.pyg.Update(self.pocolenie,self.top)
         self.pocolenie+=1
-        next_persons = np.array([Neyro(self.vhod, self.skrut,  self.vuh) for i in range(self.personQuantity)]) 
+        next_persons = np.array([Neyro(self.vhod, self.skrut, self.skrut2,  self.vuh) for i in range(self.personQuantity)]) 
         for i in range(self.personQuantity):
             
             next_persons[i]=self.crossing(self.persons[int(random.random()*(self.personQuantity/2)+(self.personQuantity/2))],
@@ -356,10 +379,10 @@ class Generic():
         next_persons[1]=self.persons[self.personQuantity-2]
         next_persons[0].dead=0
         next_persons[1].dead=0
-        next_persons[0].X=1920/2+random.randint(-81,81)
-        next_persons[1].X=1920/2+random.randint(-81,81)
-        next_persons[0].Y=800/2+random.randint(-40,40)
-        next_persons[1].Y=800/2+random.randint(-40,40)
+        next_persons[0].X=1920/2#+random.randint(-41,41)
+        next_persons[1].X=1920/2#+random.randint(-41,41)
+        next_persons[0].Y=800/2#+random.randint(-20,20)
+        next_persons[1].Y=800/2#+random.randint(-20,20)
         next_persons[0].rotate=0
         next_persons[1].rotate=0
         next_persons[0].speedX=0
