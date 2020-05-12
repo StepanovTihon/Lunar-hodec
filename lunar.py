@@ -8,6 +8,8 @@ import time as tm
 class Pygame():
     def __init__(self):# Создаём игровое поле
         pygame.init()
+        self.startmp=0
+        self.tmp=int(time.time())
         info=pygame.display.Info()
         self.razmerX=int(info.current_w)
         self.razmerY=int(info.current_h)
@@ -26,17 +28,36 @@ class Pygame():
         self.r=False
         self.n=False
         self.w=False
+        self.u=0
+        self.tmp2=0
+        self.top=0
 
-    def Update(self, tmp, top):# Обновляем экран
-        font = pygame.font.Font(None, 80)
-        text = font.render(str(tmp)+"\n"+str(top), True, [255,  255,  255])
-        textpos = (300,  800)
-        self.gameScreen.blit(text,  textpos)
-        pygame.display.flip()
-        font = pygame.font.Font(None,  80)
-        text = font.render((str(tmp)+"\n"+str(top)),  True,  [0,  0,  0])
-        textpos = (300,  800)
-        self.gameScreen.blit(text,  textpos)
+    def Update(self, tmp, top, ):# Обновляем экран
+
+        if(time.time()-self.startmp>=1):
+
+            self.u=time.time()
+            self.tmp2=tmp
+            self.top=top
+            self.startmp=time.time()
+            font = pygame.font.Font(None, 30)
+            h=str(   int((int(self.u) - self.tmp)/3600))
+            m=str(   int(int(int((int(self.u)) - self.tmp)%3600)/60))
+            s=str(int(int(self.u) - self.tmp)%60)
+            if(int(h)<10):
+                h="0"+h
+            if(int(m)<10):
+                m="0"+m
+            if(int(s)<10):
+                s="0"+s        
+            pygame.draw.rect(self.gameScreen, (0, 0, 0), (0, 900, 1920, 1080))
+            text = font.render(" Поколение: " + str(self.tmp2)+"                                                    севших:"+str(self.top)+ "                                                                   время: " + h +" : "+ m +" : "+s, True, [255,  255,  255])
+
+            textpos = (300,  900)
+            self.gameScreen.blit(text,  textpos)
+            pygame.display.flip()
+        else:
+            pygame.display.flip()
 
     def Random(self):#делает динамичный огонь
         self.RandomX=random.randint(-1, 1)
@@ -70,15 +91,22 @@ class Pygame():
         tmp2=y+self.downPointRocket 
         tmp3=x+self.RandomX  
         tmp4=y+flame+self.RandomY
-        self.line(tmp1, tmp2, tmp3, tmp4, color, rotate, x, y)
+        if(color==(0,0,0)):
+          self.line(tmp1, tmp2, tmp3, tmp4, color, rotate, x, y)
+        else:
+          self.line(tmp1, tmp2, tmp3, tmp4, (255,165,0), rotate, x, y)
         tmp1=x+self.rightPointFlame
         tmp2=y+self.downPointRocket 
         tmp3=x+self.RandomX  
         tmp4=y+flame+self.RandomY
-        self.line(tmp1, tmp2, tmp3, tmp4, color, rotate, x, y)
+        if(color==(0,0,0)):
+          self.line(tmp1, tmp2, tmp3, tmp4, color, rotate, x, y)
+        else:
+          self.line(tmp1, tmp2, tmp3, tmp4, (255,165,0), rotate, x, y)
 
-    def Drawline(self, x, y):#писует линию по y
-        pygame.draw.line(self.gameScreen,  (255, 255, 255), [x, 800], [y, 800])
+
+    def Drawline(self, x, y,rx,ry):#рисует линию по y
+        pygame.draw.line(self.gameScreen,  (255, 255, 255), [x, 800+rx], [y, 800+ry])
 
     def DrawPlanet(self, mas):#отрисовывает планету по массиву
         for i in range(len(mas)-1): 
@@ -156,15 +184,17 @@ class Rocket():
 class Neyro(Rocket):
     def __init__(self,  neyroinput,  neyrohidden, neyrohidden2,  neyroexit, moon):#Создаём нейронку
         super().__init__()
-        self.moon=moon
+        self.moon=moon 
+        self.iznach=neyroinput + 1
         self.neyroinput = neyroinput + 1 + self.moon.razmer
         self.neyrohidden = neyrohidden
         self.neyrohidden2 = neyrohidden2
         self.neyroexit = neyroexit
         self.time=0
+        self.pos=0
         self.down= np.array([1.0 for i in range(4)])
         self.dead=0
-        self.inputmass = np.array([1.0 for i in range(self.neyroinput+self.moon.razmer)])
+        self.inputmass = np.array([1.0 for i in range(self.neyroinput)])
         self.hiddenmass = np.array([1.0 for i in range(self.neyrohidden)])
         self.hiddenmass2 = np.array([1.0 for i in range(self.neyrohidden2)])
         self.exitmass = np.array([1.0 for i in range(self.neyroexit)]) 
@@ -185,10 +215,14 @@ class Neyro(Rocket):
         return math.tanh(x)
 
     def update(self,  inputs):#нахождение выходов
-
+        
 
         for i in range(self.neyroinput):
-            self.inputmass[i] = inputs[i]
+            if(i<self.iznach):
+                self.inputmass[i] = inputs[i]
+            else:
+                self.inputmass[i]=self.moon.surface[i-self.iznach]
+
         for j in range(self.neyrohidden):
             sum = 0.0
             for i in range(self.neyroinput):
@@ -230,29 +264,60 @@ class PlanetG():
 
 class planet():
     def __init__(self):#Создаём планету
-        self.razmer=5
-        self.surface = np.array([1 for i in range(self.razmer)])
+        self.razmer=7
+        self.surface = np.array([0 for i in range(self.razmer)])
         for i in range(self.razmer):
             self.surface[i]=int(random.randint(0, 1))
+        self.randoms = np.array([0 for i in range(self.razmer+1)])
+        for i in range(self.razmer+1):
+            if(i<self.razmer):
+                if(self.surface[i]==1):
+                    self.randoms[i]=int(random.randint(0, 5))
+
+        self.X = np.array([0])
+        self.Y = np.array([0])
+
+
+    def Sozd(self):
+        starttmpX=0
+        tmpX=random.randint(10,40)
+        starttmpY=0
+        while(tmpX<1920):
+
+            if(self.surface[int(tmpX/(1920/self.razmer))]==1):
+                tmpY=random.randint(0,2)
+            else:
+                tmpY=random.randint(15,50)
+            
+            self.X=np.append(self.X,tmpX)
+            self.Y=np.append(self.Y,tmpY)
+            starttmpY=tmpY
+            starttmpX=tmpX
+            tmpX=starttmpX+random.randint(10,40)  
+            
 
     def Draw(self,pyg):
-        for i in range(self.razmer):
-            if(self.surface[i]==1):
-                pyg.Drawline(i*(1920/self.razmer), (i+1)*(1920/self.razmer))
-        
+
+        for i in range(len(self.X)-1):
+            
+
+            pyg.Drawline( self.X[i], self.X[i+1],self.Y[i] , self.Y[i+1])
+            
+            
 
 class Generic():
     def __init__(self, quantity, pyg, moon):#Генетический алгоритм
         self.pyg=pyg
         self.generation=0
         self.input=9
-        self.hidden=16
-        self.hidden2=8
+        self.hidden=40
+        self.hidden2=20
         self.landing=0
         self.exit=4
+    
         self.moon=moon
         self.personQuantity=quantity
-        self.persons = np.array([Neyro(self.input,  self.hidden,  self.hidden2,   self.exit, moon) for i in range(self.personQuantity)]) 
+        self.persons = np.array([Neyro(self.input,  self.hidden,  self.hidden2,   self.exit, self.moon) for i in range(self.personQuantity)]) 
 
 
 
@@ -271,32 +336,42 @@ class Generic():
                     self.persons[i].Fizics(self.persons[i].down[0], self.persons[i].down[1], 
                     self.persons[i].down[2], self.persons[i].down[3])
                     if(self.generation%1==0):
-                        self.pyg.DrawRocket(self.persons[i].X, self.persons[i].Y, self.persons[i].rotate, self.persons[i].flame)
+                        self.pyg.DrawRocket(self.persons[i].X, self.persons[i].Y, self.persons[i].rotate, self.persons[i].flame,(255,255,255))
                         self.pyg.Update(self.generation, self.landing)
-                    if(self.persons[i].X>1920 or self.persons[i].Y>1920 or self.persons[i].X<0 or self.persons[i].Y<0):
+                    if(self.persons[i].X>1920 or self.persons[i].X<0 or self.persons[i].Y<0):
                         self.persons[i].dead=1
                         deads+=1
                     else:
-                        if(abs(self.persons[i].speedX<1)):
+                        if(abs(self.persons[i].speedX<3)):
                             self.persons[i].time+=1
                         if(abs(self.persons[i].speedY<1)):
                             self.persons[i].time+=1               
                         if(abs(self.persons[i].Y-800)<250):
                             self.persons[i].time+=1
-
-                        if(self.moon.surface[int(self.persons[i].X/(1920/5))]==1 and 800-self.persons[i].Y<15 and abs(self.persons[i].speedY)<2 and abs(self.persons[i].rotate%360)<30):                        
+                        if(self.moon.surface[int(self.persons[i].X/(1920/self.moon.razmer))]==1):
+                            self.persons[i].time+=2
+                        else:
+                            self.persons[i].time-=1
+                        if(self.moon.surface[int(self.persons[i].X/(1920/self.moon.razmer))]==1 and 800-self.persons[i].Y<15 and abs(self.persons[i].speedY)<2 and abs(self.persons[i].rotate%360)<30):                        
                             self.persons[i].dead=1
                             self.landing+=1
                             deads+=1
+                            self.persons[i].pos=1
                             self.persons[i].time=abs(self.persons[i].time)*20
                         if(self.persons[i].Y>800):
                             deads+=1
                             self.persons[i].dead=1
+                else:
+                    if(self.persons[i].pos==0):
+                        self.pyg.DrawRocket(self.persons[i].X, self.persons[i].Y, self.persons[i].rotate, self.persons[i].flame,(255,0,0))
+                    else:
+                        self.pyg.DrawRocket(self.persons[i].X, self.persons[i].Y, self.persons[i].rotate, self.persons[i].flame,(0,255,0))
+
         for i in range(self.personQuantity):
             self.pyg.DrawRocket(self.persons[i].X, self.persons[i].Y, self.persons[i].rotate, self.persons[i].flame, (0, 0, 0))
                                 
     def sort(self):#сортировка
-        person_tmp=Neyro(self.input,  self.hidden,   self.hidden2,  self.exit)
+        person_tmp=Neyro(self.input,  self.hidden,   self.hidden2,  self.exit, self.moon)
         for i in range(self.personQuantity):
             for j in range(self.personQuantity-i-1):
                 if(self.persons[j].time > self.persons[j+1].time):
@@ -304,7 +379,7 @@ class Generic():
                     self.persons[j]=self.persons[j+1]
                     self.persons[j+1]= person_tmp
     def crossing(self, person1, person2):#Скрещивание
-        tmp_person=Neyro(self.input,  self.hidden,  self.hidden2,  self.exit)
+        tmp_person=Neyro(self.input,  self.hidden,  self.hidden2,  self.exit , self.moon)
         for i in range(person1.neyroinput):
             for j in range(person1.neyrohidden):
                 tmp_person.coofIn[i, j]=(person1.coofIn[i, j]+person2.coofIn[i, j])/2
@@ -334,7 +409,7 @@ class Generic():
     def evolution(self):#Создание нового поколения
         #self.pyg.Update(self.generation, self.top)
         self.generation+=1
-        next_persons = np.array([Neyro(self.input,  self.hidden,  self.hidden2,   self.exit) for i in range(self.personQuantity)]) 
+        next_persons = np.array([Neyro(self.input,  self.hidden,  self.hidden2,   self.exit, self.moon) for i in range(self.personQuantity)]) 
         for i in range(self.personQuantity):
             next_persons[i]=self.crossing(self.persons[int(random.random()*(self.personQuantity/2)+(self.personQuantity/2))], 
                                           self.persons[int(random.random()*(self.personQuantity/2)+(self.personQuantity/2))])
@@ -356,12 +431,15 @@ class Generic():
         next_persons[0].time=0
         next_persons[1].time=0
         next_persons[0].fuel=3000.0
-        next_persons[1].fuel=3000.0                             
+        next_persons[1].fuel=3000.0
+        next_persons[0].pos=0
+        next_persons[1].pos=0                                        
         self.persons=next_persons
 
 pyg=Pygame()
 rock=Rocket()
 moon=planet()
+moon.Sozd()
 gen=Generic(10, pyg, moon)
 while(True):
 
@@ -375,10 +453,10 @@ while(True):
     #pyg.Update(0, rock.fuel)
     #pyg.DrawRocket(rock.X, rock.Y, rock.rotate, rock.flame, (0, 0, 0))
     #pyg.Random()
-    #pyg.demon()
+    pyg.demon()
     #rock.Fizics(pyg.r, pyg.l, pyg.w, pyg.n)
 
-    tm.sleep(0.001)
+    tm.sleep(0.0001)
 
 
 
