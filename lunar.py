@@ -71,6 +71,8 @@ class Pygame():
         + ((tm4)-ypos) * math.sin(math.radians(rotate))),  ypos+(((tm4)-ypos) * math.cos(math.radians(rotate)) 
         - ((tm3)-xpos) * math.sin(math.radians(rotate)))])
             
+    
+    
     def DrawRocket(self,  x,  y,  rotate,  flame,  color=(255,  255,  255)):#Рисует рокету
         tmp1=x
         tmp2=y+self.upPointRocket
@@ -105,6 +107,10 @@ class Pygame():
           self.line(tmp1, tmp2, tmp3, tmp4, (255,165,0), rotate, x, y)
 
 
+    def DrawR(self):
+        print("u")
+        pygame.draw.rect(self.gameScreen, (0, 0, 0), (0, 0, 1920, 1080))
+
     def Drawline(self, x, y,rx,ry):#рисует линию по y
         pygame.draw.line(self.gameScreen,  (255, 255, 255), [x, 800+rx], [y, 800+ry])
 
@@ -117,14 +123,14 @@ class Pygame():
        
         for event in pygame.event.get():         
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
+                if event.key == pygame.K_l:
                     self.l=1
                 else:
                     self.l=0
-                if event.key == pygame.K_RIGHT:
+                if event.key == pygame.K_s:
                     self.r=1
                 else:
-                    self.r=0                  
+                    self.r=0                  s
                 if event.key == pygame.K_UP:
                     self.w=1
                 else:
@@ -264,7 +270,7 @@ class PlanetG():
 
 class planet():
     def __init__(self):#Создаём планету
-        self.razmer=7
+        self.razmer=3
         self.surface = np.array([0 for i in range(self.razmer)])
         for i in range(self.razmer):
             self.surface[i]=int(random.randint(0, 1))
@@ -302,7 +308,7 @@ class planet():
             
 
             pyg.Drawline( self.X[i], self.X[i+1],self.Y[i] , self.Y[i+1])
-            
+        print("a")
             
 
 class Generic():
@@ -319,11 +325,63 @@ class Generic():
         self.personQuantity=quantity
         self.persons = np.array([Neyro(self.input,  self.hidden,  self.hidden2,   self.exit, self.moon) for i in range(self.personQuantity)]) 
 
+    def Save(self,plan):
+        f = open("abc", "w")
+        for i in range(self.personQuantity):
+            for k in range(self.persons[i].neyroinput):
+                for n in range(self.persons[i].neyrohidden): 
+                    f.write(str(self.persons[i].coofIn[k][n])+"\n")
+            for k in range(self.persons[i].neyrohidden):
+                for n in range(self.persons[i].neyrohidden2):
+                    f.write(str(self.persons[i].coofCentr[k][n])+"\n")
+            for k in range(self.persons[i].neyrohidden2):
+                for n in range(self.persons[i].neyroexit):
+                    f.write(str(self.persons[i].coofOut[k][n])+"\n")
+        for i in range(len(plan)):
+            f.write(str(plan[i])+"\n")
+        f.write(str(time.time()-pyg.tmp)+"\n")
+        f.write(str(self.landing)+"\n")
+        f.write(str(self.generation)+"\n")
+        
+
+        f.close()
+
+    def load(self,plan,pyg):
+        f = open("abc", "r")#.readline()
+        for i in range(self.personQuantity):
+            for k in range(self.persons[i].neyroinput):
+                for n in range(self.persons[i].neyrohidden): 
+                    self.persons[i].coofIn[k][n]=float(f.readline())
+            for k in range(self.persons[i].neyrohidden):
+                for n in range(self.persons[i].neyrohidden2):
+                    self.persons[i].coofCentr[k][n]=float(f.readline())
+            for k in range(self.persons[i].neyrohidden2):
+                for n in range(self.persons[i].neyroexit):
+                    self.persons[i].coofOut[k][n]=float(f.readline())
+        for i in range(len(plan)):
+            plan[i]=int(f.readline())
+        
+        pyg.tmp-=float(f.readline())
+        self.landing=int(f.readline())
+        self.generation=int(f.readline())
 
 
+        f.close()
     def check(self):#Отбор
         deads=0
         while(deads<self.personQuantity):
+            self.pyg.demon()
+            if(self.pyg.r==1):
+                self.Save(self.moon.surface)
+
+            if(self.pyg.l==1):
+                #self.moon.Sozd() 
+                moon.__init__()
+                self.load(self.moon.surface,self.pyg)
+                self.pyg.DrawR()
+                self.moon.Sozd()
+                self.moon.Draw(self.pyg)
+
             for i in range(self.personQuantity):
                 if(self.persons[i].dead==0):
                     if(self.generation%1==0 ):
@@ -441,19 +499,23 @@ rock=Rocket()
 moon=planet()
 moon.Sozd()
 gen=Generic(10, pyg, moon)
+moon.Draw(pyg)
 while(True):
 
             
-    moon.Draw(pyg)
+
+
     gen.check()
     gen.sort()
     gen.evolution()
+    pyg.DrawR()
+    moon.Draw(pyg)
     #pyg.DrawRocket(rock.X, rock.Y, rock.rotate, rock.flame)
     pyg.DrawPlanet(moon.surface)
     #pyg.Update(0, rock.fuel)
     #pyg.DrawRocket(rock.X, rock.Y, rock.rotate, rock.flame, (0, 0, 0))
     #pyg.Random()
-    pyg.demon()
+
     #rock.Fizics(pyg.r, pyg.l, pyg.w, pyg.n)
 
     tm.sleep(0.0001)
